@@ -12,7 +12,7 @@ export default function SlideCard({ slide, index, onInspect, onNavigate, onCopyC
   const handleImageError = () => {
     if (!imgError) {
       setImgError(true);
-      setImageSrc(`./public/JJ/${slide.id}.png`);
+      setImageSrc(`/JJ/${slide.id}.png`);
     }
   };
 

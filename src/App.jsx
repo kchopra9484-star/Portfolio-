@@ -1,4 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from 'lenis';
 import Navbar from './components/Navbar';
 import SlideCard from './components/SlideCard';
 import SlidePagination from './components/SlidePagination';
@@ -6,6 +9,10 @@ import Lightbox from './components/Lightbox';
 import ContactFooter from './components/ContactFooter';
 import { portfolioSlides, designerInfo } from './data/portfolioData';
 import { ambientSound } from './utils/audio';
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export default function App() {
   const [activeSlide, setActiveSlide] = useState(0); // 0 = 360° Hero, 1..6 = Slides
@@ -24,17 +31,15 @@ export default function App() {
     let lenisInstance = null;
     let updateVideoTick = null;
 
-    const initExperience = async () => {
+    const handleWindowScroll = () => {
+      detectActiveSection();
+      updateProgressBar();
+    };
+
+    const initExperience = () => {
       try {
         // 1. Lenis Smooth Scrolling (Single unified ticker - No double RAF)
-        let LenisClass = window.Lenis;
-        if (!LenisClass && typeof window !== 'undefined') {
-          try {
-            const module = await import('lenis');
-            LenisClass = module.default || module.Lenis;
-          } catch (e) {}
-        }
-
+        const LenisClass = Lenis || (typeof window !== 'undefined' ? window.Lenis : null);
         if (LenisClass) {
           lenisInstance = new LenisClass({
             duration: 0.9,
@@ -50,34 +55,25 @@ export default function App() {
         }
 
         // 2. GSAP & ScrollTrigger setup
-        let gsap = window.gsap;
-        let ScrollTrigger = window.ScrollTrigger;
+        const activeGsap = gsap || (typeof window !== 'undefined' ? window.gsap : null);
+        const activeScrollTrigger = ScrollTrigger || (typeof window !== 'undefined' ? window.ScrollTrigger : null);
 
-        if (!gsap && typeof window !== 'undefined') {
-          try {
-            const gsapModule = await import('gsap');
-            const stModule = await import('gsap/ScrollTrigger');
-            gsap = gsapModule.gsap || gsapModule.default;
-            ScrollTrigger = stModule.ScrollTrigger || stModule.default;
-          } catch (err) {}
-        }
-
-        if (gsap && ScrollTrigger) {
-          gsap.registerPlugin(ScrollTrigger);
-          gsapRef.current = gsap;
+        if (activeGsap && activeScrollTrigger) {
+          activeGsap.registerPlugin(activeScrollTrigger);
+          gsapRef.current = activeGsap;
 
           // Connect Lenis cleanly to GSAP ticker (only single driver)
           if (lenisInstance) {
             lenisInstance.on('scroll', () => {
-              ScrollTrigger.update();
+              activeScrollTrigger.update();
               detectActiveSection();
               updateProgressBar();
             });
 
-            gsap.ticker.add((time) => {
+            activeGsap.ticker.add((time) => {
               lenisInstance.raf(time * 1000);
             });
-            gsap.ticker.lagSmoothing(0);
+            activeGsap.ticker.lagSmoothing(0);
           }
 
           // 3. 360° Video Scrubbing Setup (Single Clean Full-Bleed Video)
@@ -264,16 +260,15 @@ export default function App() {
 
     initExperience();
 
-    window.addEventListener('scroll', () => {
-      detectActiveSection();
-      updateProgressBar();
-    }, { passive: true });
+    window.addEventListener('scroll', handleWindowScroll, { passive: true });
 
     return () => {
       if (updateVideoTick && gsapRef.current) {
         gsapRef.current.ticker.remove(updateVideoTick);
       }
       if (lenisInstance) lenisInstance.destroy();
+      ScrollTrigger.getAll().forEach((t) => t.kill());
+      window.removeEventListener('scroll', handleWindowScroll);
     };
   }, []);
 

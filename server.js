@@ -35,10 +35,14 @@ const server = http.createServer((req, res) => {
   let reqUrl = req.url.split('?')[0];
   if (reqUrl === '/') reqUrl = '/index.html';
 
-  let decodedPath = decodeURIComponent(reqUrl);
-  let filePath = path.join(__dirname, decodedPath);
+  const distDir = path.join(__dirname, 'dist');
+  const hasDist = fs.existsSync(path.join(distDir, 'index.html'));
+  const rootDir = hasDist ? distDir : __dirname;
 
-  if (!filePath.startsWith(__dirname)) {
+  let decodedPath = decodeURIComponent(reqUrl);
+  let filePath = path.join(rootDir, decodedPath);
+
+  if (!filePath.startsWith(rootDir)) {
     res.writeHead(403, { 'Content-Type': 'text/plain' });
     res.end('403 Forbidden');
     return;
@@ -46,7 +50,7 @@ const server = http.createServer((req, res) => {
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
-      filePath = path.join(__dirname, 'index.html');
+      filePath = path.join(rootDir, 'index.html');
     }
 
     const ext = path.extname(filePath).toLowerCase();
