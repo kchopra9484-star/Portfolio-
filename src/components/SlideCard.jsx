@@ -206,7 +206,7 @@ export default function SlideCard({ slide, index, onInspect, onNavigate, onCopyC
             <h2
               style={{
                 fontFamily: 'var(--font-heading)',
-                fontSize: '1.25rem',
+                fontSize: 'clamp(1.1rem, 3.5vw, 1.3rem)',
                 fontWeight: '700',
                 letterSpacing: '0.02em',
                 color: '#ffffff',
@@ -218,7 +218,7 @@ export default function SlideCard({ slide, index, onInspect, onNavigate, onCopyC
             <p
               style={{
                 color: 'var(--text-muted)',
-                fontSize: '0.88rem',
+                fontSize: 'clamp(0.82rem, 2.4vw, 0.88rem)',
                 maxWidth: '750px',
                 lineHeight: '1.5'
               }}
@@ -301,6 +301,28 @@ export default function SlideCard({ slide, index, onInspect, onNavigate, onCopyC
           )}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 600px) {
+          .slide-header-meta {
+            gap: 8px !important;
+          }
+          .slide-footer-meta {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 14px !important;
+          }
+          .slide-footer-meta > div:last-child {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .slide-footer-meta .btn-secondary {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }

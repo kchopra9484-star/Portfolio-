@@ -3,12 +3,38 @@ import { portfolioSlides } from '../data/portfolioData';
 
 export default function Lightbox({ activeSlideId, onClose, onNavigate }) {
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [touchStartX, setTouchStartX] = useState(null);
+  const [touchEndX, setTouchEndX] = useState(null);
   const currentSlide = portfolioSlides.find((s) => s.id === activeSlideId) || portfolioSlides[0];
 
   // Reset zoom on slide change
   useEffect(() => {
     setZoomLevel(1);
   }, [activeSlideId]);
+
+  // Touch Swipe for mobile phones and tablets
+  const handleTouchStart = (e) => {
+    setTouchEndX(null);
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX || !touchEndX) return;
+    const diff = touchStartX - touchEndX;
+    if (diff > 50) {
+      // Swiped Left -> Next Slide
+      const nextId = activeSlideId >= portfolioSlides.length ? 1 : activeSlideId + 1;
+      onNavigate(nextId);
+    } else if (diff < -50) {
+      // Swiped Right -> Prev Slide
+      const prevId = activeSlideId <= 1 ? portfolioSlides.length : activeSlideId - 1;
+      onNavigate(prevId);
+    }
+  };
 
   // Keyboard navigation
   useEffect(() => {
@@ -47,27 +73,29 @@ export default function Lightbox({ activeSlideId, onClose, onNavigate }) {
 
   return (
     <div
+      className="lightbox-overlay"
       onClick={onClose}
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         width: '100vw',
-        height: '100vh',
+        height: '100dvh',
         zIndex: 100,
-        background: 'rgba(5, 1, 3, 0.94)',
+        background: 'rgba(5, 1, 3, 0.95)',
         backdropFilter: 'blur(25px)',
         WebkitBackdropFilter: 'blur(25px)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '24px',
+        padding: '20px 24px',
         animation: 'fadeInLightbox 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
       }}
     >
       {/* Top Lightbox Header */}
       <div
+        className="lightbox-top-bar"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
@@ -75,37 +103,40 @@ export default function Lightbox({ activeSlideId, onClose, onNavigate }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: '12px',
           zIndex: 10
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
           <span
             style={{
               fontFamily: 'var(--font-heading)',
-              fontSize: '0.85rem',
+              fontSize: '0.82rem',
               fontWeight: '700',
               color: '#f4e12e',
               background: 'rgba(244, 225, 46, 0.12)',
               border: '1px solid rgba(244, 225, 46, 0.3)',
               padding: '3px 10px',
-              borderRadius: '999px'
+              borderRadius: '999px',
+              flexShrink: 0
             }}
           >
             {currentSlide.slideNumber} / {String(portfolioSlides.length).padStart(2, '0')}
           </span>
-          <div>
-            <h3 style={{ fontSize: '1rem', fontWeight: '700', color: '#ffffff' }}>
+          <div style={{ minWidth: 0 }}>
+            <h3 style={{ fontSize: 'clamp(0.88rem, 2.8vw, 1.05rem)', fontWeight: '700', color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {currentSlide.title}
             </h3>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {currentSlide.category}
             </p>
           </div>
         </div>
 
         {/* Zoom & Close controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <div
+            className="lightbox-zoom-bar"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -173,8 +204,8 @@ export default function Lightbox({ activeSlideId, onClose, onNavigate }) {
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(216, 30, 61, 0.25)',
-              border: '1px solid rgba(255, 43, 80, 0.5)',
+              background: 'rgba(216, 30, 61, 0.3)',
+              border: '1px solid rgba(255, 43, 80, 0.6)',
               color: '#ffffff',
               width: '38px',
               height: '38px',
@@ -183,7 +214,8 @@ export default function Lightbox({ activeSlideId, onClose, onNavigate }) {
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              flexShrink: 0
             }}
             title="Close Lightbox (Esc)"
           >
@@ -195,19 +227,23 @@ export default function Lightbox({ activeSlideId, onClose, onNavigate }) {
         </div>
       </div>
 
-      {/* Main Image Stage */}
+      {/* Main Image Stage (With Touch Swipe Support) */}
       <div
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
           position: 'relative',
           width: '100%',
           maxWidth: '1240px',
-          height: '78vh',
+          height: '75dvh',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          overflow: 'auto',
-          userSelect: 'none'
+          overflow: 'hidden',
+          userSelect: 'none',
+          touchAction: 'pan-y pinch-zoom'
         }}
       >
         <img
@@ -285,6 +321,7 @@ export default function Lightbox({ activeSlideId, onClose, onNavigate }) {
 
       {/* Footer Navigation Bar */}
       <div
+        className="lightbox-bottom-pills"
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
@@ -324,6 +361,32 @@ export default function Lightbox({ activeSlideId, onClose, onNavigate }) {
         @keyframes fadeInLightbox {
           from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+          .lightbox-overlay {
+            padding: 14px 10px !important;
+          }
+          .lightbox-zoom-bar {
+            display: none !important;
+          }
+          .lightbox-arrow-btn {
+            width: 38px !important;
+            height: 38px !important;
+          }
+          .lightbox-bottom-pills {
+            max-width: 95vw !important;
+            overflow-x: auto !important;
+            justify-content: flex-start !important;
+            scrollbar-width: none !important;
+            padding: 6px 10px !important;
+            gap: 6px !important;
+          }
+          .lightbox-bottom-pills button {
+            padding: 5px 11px !important;
+            font-size: 0.74rem !important;
+            flex-shrink: 0 !important;
+          }
         }
       `}</style>
     </div>

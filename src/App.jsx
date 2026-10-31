@@ -82,6 +82,19 @@ export default function App() {
           if (video) {
             video.pause();
             video.muted = true;
+            video.playsInline = true;
+            video.setAttribute('webkit-playsinline', 'true');
+
+            // Prime iOS/mobile hardware decoder on first touch/interaction
+            const primeVideo = () => {
+              if (video.paused && video.readyState >= 1) {
+                video.play().then(() => video.pause()).catch(() => {});
+              }
+              window.removeEventListener('touchstart', primeVideo);
+              window.removeEventListener('pointerdown', primeVideo);
+            };
+            window.addEventListener('touchstart', primeVideo, { passive: true, once: true });
+            window.addEventListener('pointerdown', primeVideo, { passive: true, once: true });
 
             const setupVideoScrub = () => {
               const duration = video.duration || 9.89;
@@ -109,12 +122,12 @@ export default function App() {
 
               gsap.ticker.add(updateVideoTick);
 
-              // Pin the video container across 2000px scroll sequence
+              // Pin the video container across scroll sequence (responsive distance for mobile touch vs desktop)
               const introTl = gsap.timeline({
                 scrollTrigger: {
                   trigger: '#video-intro-container',
                   start: 'top top',
-                  end: '+=2000',
+                  end: () => (typeof window !== 'undefined' && window.innerWidth < 768 ? '+=1300' : '+=2000'),
                   pin: true,
                   scrub: 0.3,
                   anticipatePin: 1,
@@ -287,13 +300,15 @@ export default function App() {
     const targetElement = document.getElementById(`slide-${targetId}`);
     if (!targetElement) return;
 
+    const navOffset = typeof window !== 'undefined' && window.innerWidth < 768 ? -60 : -85;
+
     if (lenisRef.current) {
       lenisRef.current.scrollTo(targetElement, {
-        offset: -85, // Properly offsets fixed navbar height
+        offset: navOffset, // Dynamically offsets mobile vs desktop navbar height
         duration: 1.0
       });
     } else {
-      const top = targetElement.getBoundingClientRect().top + window.scrollY - 85;
+      const top = targetElement.getBoundingClientRect().top + window.scrollY + navOffset;
       window.scrollTo({ top, behavior: 'smooth' });
     }
     setActiveSlide(targetId);

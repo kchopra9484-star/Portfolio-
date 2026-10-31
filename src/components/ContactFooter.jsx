@@ -12,12 +12,13 @@ export default function ContactFooter({ onScrollToTop }) {
 
   return (
     <footer
+      className="portfolio-footer"
       style={{
         position: 'relative',
         zIndex: 10,
         background: 'linear-gradient(180deg, #070204 0%, #150409 60%, #20060d 100%)',
         borderTop: '1px solid rgba(216, 30, 61, 0.25)',
-        padding: '100px 24px 60px 24px',
+        padding: '90px 20px 50px 20px',
         overflow: 'hidden'
       }}
     >
@@ -225,6 +226,19 @@ export default function ContactFooter({ onScrollToTop }) {
           </button>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 600px) {
+          .portfolio-footer {
+            padding: 60px 16px 40px 16px !important;
+          }
+          .portfolio-footer .btn-primary,
+          .portfolio-footer .btn-secondary {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+        }
+      `}</style>
     </footer>
   );
 }
